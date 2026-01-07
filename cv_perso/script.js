@@ -2,6 +2,20 @@
 // COMPTEUR DE VISITES (localStorage)
 // ======================================
 function initVisitCounter() {
+    // Utiliser un flag pour éviter les multiples appels dans la même page
+    if (window.visitCounterInitialized) {
+        // Afficher juste la valeur actuelle si déjà initialisé
+        let visitCount = localStorage.getItem('visitCount');
+        if (visitCount === null) {
+            visitCount = 0;
+        }
+        document.getElementById('visit-count').textContent = visitCount;
+        return;
+    }
+
+    // Marquer comme initialisé pour cette page
+    window.visitCounterInitialized = true;
+
     let visitCount = localStorage.getItem('visitCount');
 
     if (visitCount === null) {
@@ -324,9 +338,17 @@ function initFormValidation() {
     subjectInput.addEventListener('blur', () => validateField(subjectInput, validators.subject));
     messageInput.addEventListener('blur', () => validateField(messageInput, validators.message));
 
+    // Flag pour empêcher les soumissions multiples
+    let isSubmitting = false;
+
     // Soumission du formulaire
     form.addEventListener('submit', (e) => {
         e.preventDefault();
+
+        // Empêcher les soumissions multiples
+        if (isSubmitting) {
+            return;
+        }
 
         // Valider tous les champs
         const isNameValid = validateField(nameInput, validators.name);
@@ -335,19 +357,54 @@ function initFormValidation() {
         const isMessageValid = validateField(messageInput, validators.message);
 
         if (isNameValid && isEmailValid && isSubjectValid && isMessageValid) {
-            // Simulation d'envoi (en production, envoyer à un serveur)
+            // Marquer comme en cours de soumission
+            isSubmitting = true;
+            
+            // Désactiver le bouton de soumission
+            const submitBtn = form.querySelector('.submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.6';
+            submitBtn.style.cursor = 'not-allowed';
+
+            // Préparer les données du formulaire
+            const recipientEmail = 'tfk1127@gmail.com';
+            const senderName = nameInput.value.trim();
+            const senderEmail = emailInput.value.trim();
+            const emailSubject = subjectInput.value.trim();
+            const emailBody = messageInput.value.trim();
+
+            // Créer le corps du message avec les informations du sender
+            const fullBody = `Bonjour,\n\n${emailBody}\n\n---\nDe : ${senderName}\nEmail : ${senderEmail}`;
+
+            // Encoder les paramètres pour le mailto
+            const encodedSubject = encodeURIComponent(emailSubject);
+            const encodedBody = encodeURIComponent(fullBody);
+            const encodedReplyTo = encodeURIComponent(`${senderName} <${senderEmail}>`);
+
+            // Créer le lien mailto
+            const mailtoLink = `mailto:${recipientEmail}?subject=${encodedSubject}&body=${encodedBody}&reply-to=${encodedReplyTo}`;
+
+            // Ouvrir le client de messagerie par défaut (méthode fiable)
+            const mailtoAnchor = document.createElement('a');
+            mailtoAnchor.href = mailtoLink;
+            mailtoAnchor.target = '_blank';
+            mailtoAnchor.style.display = 'none';
+            document.body.appendChild(mailtoAnchor);
+            mailtoAnchor.click();
+            document.body.removeChild(mailtoAnchor);
+
             console.log('Formulaire soumis:', {
-                name: nameInput.value,
-                email: emailInput.value,
-                subject: subjectInput.value,
-                message: messageInput.value
+                name: senderName,
+                email: senderEmail,
+                subject: emailSubject,
+                message: emailBody
             });
 
             // Afficher le message de succès
             const successMessage = document.querySelector('.form-success-message');
             successMessage.classList.add('show');
 
-            // Ajouter de l'XP (gamification)
+            // Ajouter de l'XP (gamification) - une seule fois
             addXP(50);
 
             // Réinitialiser le formulaire après 3 secondes
@@ -357,6 +414,12 @@ function initFormValidation() {
                     group.classList.remove('success', 'error');
                 });
                 successMessage.classList.remove('show');
+                
+                // Réactiver le formulaire
+                isSubmitting = false;
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+                submitBtn.style.cursor = 'pointer';
             }, 3000);
         }
     });
