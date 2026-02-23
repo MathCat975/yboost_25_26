@@ -382,7 +382,7 @@ function initFormValidation() {
             const encodedReplyTo = encodeURIComponent(`${senderName} <${senderEmail}>`);
 
             // Créer le lien mailto
-            const mailtoLink = `mailto:${recipientEmail}?subject=${encodedSubject}&body=${encodedBody}&reply-to=${encodedReplyTo}`;
+            const mailtoLink = `mailto:${recipientEmail}?subject=${encodedSubject}&body=${encodedBody}`;
 
             // Ouvrir le client de messagerie par défaut (méthode fiable)
             const mailtoAnchor = document.createElement('a');
